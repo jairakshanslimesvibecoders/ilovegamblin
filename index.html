@@ -1,136 +1,156 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Pack Opening Game</title>
+  <title>Pack Cards Game</title>
   <style>
     body {
       font-family: Arial;
-      text-align: center;
-      background: #0f172a;
+      background: #0b1020;
       color: white;
-    }
-
-    .container {
-      margin-top: 50px;
-    }
-
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      margin: 10px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      background: #22c55e;
-      color: black;
-    }
-
-    button:hover {
-      background: #16a34a;
+      text-align: center;
     }
 
     .card {
-      font-size: 40px;
-      margin: 20px;
+      border: 2px solid #555;
+      border-radius: 10px;
+      padding: 10px;
+      margin: 5px;
+      display: inline-block;
+      width: 120px;
     }
 
-    .stats {
-      margin-top: 20px;
-      font-size: 14px;
-      color: #cbd5f5;
+    button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
     }
+
+    .common { border-color: gray; }
+    .rare { border-color: cyan; }
+    .epic { border-color: purple; }
+    .legendary { border-color: gold; }
+    .mythic { border-color: orange; }
   </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>🎁 Pack Opening Game</h1>
-  <h2>Balance: <span id="balance">1000</span> coins</h2>
+<h1>🎴 Pack Cards Game</h1>
+<h2>Coins: <span id="coins">1000</span></h2>
 
-  <button onclick="openPack()">Open Pack (100 coins)</button>
-  <button onclick="resetGame()">Reset</button>
+<button onclick="openPack('normal')">Open Pack (100)</button>
+<button onclick="openPack('mythic')">Open Mythic Pack (500)</button>
 
-  <div class="card" id="card">?</div>
-  <h2 id="result"></h2>
+<h2 id="result"></h2>
 
-  <div class="stats">
-    Packs Opened: <span id="opened">0</span> |
-    Legendaries: <span id="legendaryCount">0</span>
-  </div>
-</div>
+<h2>📦 Inventory</h2>
+<div id="inventory"></div>
 
 <script>
-let balance = localStorage.getItem("balance") || 1000;
-let opened = localStorage.getItem("opened") || 0;
-let legendaryCount = localStorage.getItem("legendaryCount") || 0;
+let save = JSON.parse(localStorage.getItem("cardGame")) || {
+  coins: 1000,
+  inventory: []
+};
 
-balance = parseInt(balance);
-opened = parseInt(opened);
-legendaryCount = parseInt(legendaryCount);
+function saveGame() {
+  localStorage.setItem("cardGame", JSON.stringify(save));
+}
 
-updateUI();
+function updateUI() {
+  document.getElementById("coins").innerText = save.coins;
 
-function openPack() {
-  if (balance < 100) {
-    alert("Not enough coins!");
-    return;
-  }
+  let inv = document.getElementById("inventory");
+  inv.innerHTML = "";
 
-  balance -= 100;
-  opened++;
+  save.inventory.forEach((card, index) => {
+    let div = document.createElement("div");
+    div.className = "card " + card.rarity;
 
-  let rand = Math.random() * 100;
-  let reward = 0;
-  let rarity = "";
-  let emoji = "";
+    div.innerHTML = `
+      <h4>${card.name}</h4>
+      <p>${card.rarity}</p>
+      <p>Value: ${card.value}</p>
+      <button onclick="sellCard(${index})">Sell</button>
+    `;
 
-  if (rand < 0.5) {
-    reward = 2000;
-    rarity = "🌟 LEGENDARY!";
-    emoji = "👑";
-    legendaryCount++;
-  } else if (rand < 5) {
-    reward = 500;
-    rarity = "🔥 Epic!";
-    emoji = "🔥";
-  } else if (rand < 30) {
-    reward = 120;
-    rarity = "💎 Rare!";
-    emoji = "💎";
-  } else {
-    reward = 50;
-    rarity = "⚪ Common";
-    emoji = "⚪";
-  }
+    inv.appendChild(div);
+  });
+}
 
-  balance += reward;
-
-  document.getElementById("card").innerText = emoji;
-  document.getElementById("result").innerText =
-    `${rarity} You got ${reward} coins!`;
-
+function sellCard(i) {
+  save.coins += save.inventory[i].value;
+  save.inventory.splice(i, 1);
   saveGame();
   updateUI();
 }
 
-function updateUI() {
-  document.getElementById("balance").innerText = balance;
-  document.getElementById("opened").innerText = opened;
-  document.getElementById("legendaryCount").innerText = legendaryCount;
-}
+function getCard(packType) {
+  let r = Math.random() * 100;
 
-function saveGame() {
-  localStorage.setItem("balance", balance);
-  localStorage.setItem("opened", opened);
-  localStorage.setItem("legendaryCount", legendaryCount);
-}
-
-function resetGame() {
-  if (confirm("Reset your progress?")) {
-    localStorage.clear();
-    location.reload();
+  if (packType === "normal") {
+    if (r < 0.1) return makeCard("Legendary", 5000);
+    if (r < 2.1) return makeCard("Epic", 500);
+    if (r < 20.1) return makeCard("Rare", 150);
+    return makeCard("Common", 70);
   }
+
+  if (r < 0.05) return makeCard("Mythic", 20000);
+  if (r < 0.25) return makeCard("Legendary", 7000);
+  if (r < 2.25) return makeCard("Epic", 2000);
+  if (r < 20.25) return makeCard("Rare", 800);
+  return makeCard("Common", 300);
 }
+
+function makeCard(rarity, value) {
+  const names = {
+    Common: ["Slime", "Rat", "Stick"],
+    Rare: ["Knight", "Wolf", "Archer"],
+    Epic: ["Dragon", "Wizard", "Titan"],
+    Legendary: ["Phoenix", "Leviathan", "Storm King"],
+    Mythic: ["Void God", "Time Breaker", "Celestial"]
+  };
+
+  let pool = names[rarity];
+  let name = pool[Math.floor(Math.random() * pool.length)];
+
+  return { name, rarity, value };
+}
+
+function openPack(type) {
+  let cost = type === "normal" ? 100 : 500;
+
+  if (save.coins < cost) {
+    alert("Not enough coins!");
+    return;
+  }
+
+  save.coins -= cost;
+
+  // animation
+  let resultText = document.getElementById("result");
+  let cycle = ["Common", "Rare", "Epic", "Legendary", "Mythic"];
+  let i = 0;
+
+  let anim = setInterval(() => {
+    resultText.innerText = "Opening... " + cycle[i % cycle.length];
+    i++;
+  }, 100);
+
+  setTimeout(() => {
+    clearInterval(anim);
+
+    let card = getCard(type);
+    save.inventory.push(card);
+
+    resultText.innerText = `You got ${card.rarity}: ${card.name}!`;
+
+    saveGame();
+    updateUI();
+  }, 1500);
+}
+
+updateUI();
 </script>
 
 </body>
