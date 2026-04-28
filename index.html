@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pack Opening Game</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #0f172a;
+      color: white;
+    }
+
+    .container {
+      margin-top: 50px;
+    }
+
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #22c55e;
+      color: black;
+    }
+
+    button:hover {
+      background: #16a34a;
+    }
+
+    .card {
+      font-size: 40px;
+      margin: 20px;
+    }
+
+    .stats {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #cbd5f5;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🎁 Pack Opening Game</h1>
+  <h2>Balance: <span id="balance">1000</span> coins</h2>
+
+  <button onclick="openPack()">Open Pack (100 coins)</button>
+  <button onclick="resetGame()">Reset</button>
+
+  <div class="card" id="card">?</div>
+  <h2 id="result"></h2>
+
+  <div class="stats">
+    Packs Opened: <span id="opened">0</span> |
+    Legendaries: <span id="legendaryCount">0</span>
+  </div>
+</div>
+
+<script>
+let balance = localStorage.getItem("balance") || 1000;
+let opened = localStorage.getItem("opened") || 0;
+let legendaryCount = localStorage.getItem("legendaryCount") || 0;
+
+balance = parseInt(balance);
+opened = parseInt(opened);
+legendaryCount = parseInt(legendaryCount);
+
+updateUI();
+
+function openPack() {
+  if (balance < 100) {
+    alert("Not enough coins!");
+    return;
+  }
+
+  balance -= 100;
+  opened++;
+
+  let rand = Math.random() * 100;
+  let reward = 0;
+  let rarity = "";
+  let emoji = "";
+
+  if (rand < 0.5) {
+    reward = 2000;
+    rarity = "🌟 LEGENDARY!";
+    emoji = "👑";
+    legendaryCount++;
+  } else if (rand < 5) {
+    reward = 500;
+    rarity = "🔥 Epic!";
+    emoji = "🔥";
+  } else if (rand < 30) {
+    reward = 120;
+    rarity = "💎 Rare!";
+    emoji = "💎";
+  } else {
+    reward = 50;
+    rarity = "⚪ Common";
+    emoji = "⚪";
+  }
+
+  balance += reward;
+
+  document.getElementById("card").innerText = emoji;
+  document.getElementById("result").innerText =
+    `${rarity} You got ${reward} coins!`;
+
+  saveGame();
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById("balance").innerText = balance;
+  document.getElementById("opened").innerText = opened;
+  document.getElementById("legendaryCount").innerText = legendaryCount;
+}
+
+function saveGame() {
+  localStorage.setItem("balance", balance);
+  localStorage.setItem("opened", opened);
+  localStorage.setItem("legendaryCount", legendaryCount);
+}
+
+function resetGame() {
+  if (confirm("Reset your progress?")) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+</script>
+
+</body>
+</html>
